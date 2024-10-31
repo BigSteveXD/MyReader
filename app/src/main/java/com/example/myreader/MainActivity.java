@@ -20,7 +20,7 @@ import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity{
     private ActivityResultLauncher<Intent> filePickerLauncher;
-    ImageView myView;
+    ZoomImageView myView;//ImageView
     ParcelFileDescriptor pfd;
     PdfRenderer renderer;
     //Bitmap bitmap;
@@ -35,7 +35,7 @@ public class MainActivity extends AppCompatActivity{
     protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
         //EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_main);//R.layout.activity_main
+        setContentView(R.layout.activity_main);
         /*
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
