@@ -133,6 +133,19 @@ public class MainActivity extends AppCompatActivity{
     }
 
     @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt("current_page_index", currentPageNum);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        currentPageNum = savedInstanceState.getInt("current_page_index", 0);
+        showPage(currentPageNum);
+    }
+
+    @Override
     protected void onStop(){
         super.onStop();
         try{

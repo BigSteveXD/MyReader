@@ -31,11 +31,12 @@
         android:layout_gravity="bottom">
     </Button>
 
+<!--<ImageView></ImageView>-->
+    <!--android:layout_centerInParent="true"-->
     <com.example.myreader.ZoomImageView
         android:id="@+id/pdfView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_centerInParent="true">
-    </com.example.myreader.ZoomImageView>
 
+        android:scaleType="matrix"/>
 </RelativeLayout>
