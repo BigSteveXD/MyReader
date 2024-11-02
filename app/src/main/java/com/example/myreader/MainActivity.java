@@ -20,16 +20,16 @@ import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity{
     private ActivityResultLauncher<Intent> filePickerLauncher;
-    ImageView myView;//ImageView //ZoomImageView
-    ParcelFileDescriptor pfd;
-    PdfRenderer renderer;
-    //Bitmap bitmap;
+    private ImageView myView;//ImageView //ZoomImageView
+    private Uri uri;
+    private ParcelFileDescriptor pfd;
+    private PdfRenderer renderer;
     private PdfRenderer.Page currentPage;
-    int currentPageNum = 0;
-    int totalPages = 0;
-    Button btnOpenFile;
-    Button btnNext;
-    Button btnPrev;
+    private int currentPageNum = 0;
+    private int totalPages = 0;
+    private Button btnOpenFile;
+    private Button btnNext;
+    private Button btnPrev;
 
     @Override
     protected void onCreate(Bundle savedInstanceState){
@@ -88,7 +88,7 @@ public class MainActivity extends AppCompatActivity{
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null){
-                        Uri uri = result.getData().getData();
+                        uri = result.getData().getData();
                         handleFileUri(uri);
                     }
                 }
@@ -110,7 +110,8 @@ public class MainActivity extends AppCompatActivity{
         //int width = displayMetrics.widthPixels;
 
         try{
-            pfd = getContentResolver().openFileDescriptor(uri, "r");
+            pfd = getContentResolver().openFileDescriptor(uri, "r");//WORKS
+            //getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
             renderer = new PdfRenderer(pfd);
         }catch(Exception e){
             e.printStackTrace();
@@ -124,13 +125,14 @@ public class MainActivity extends AppCompatActivity{
         if(currentPage!=null){
             currentPage.close();
         }
-        if(renderer==null){
-            try{
-                renderer = new PdfRenderer(pfd);
-            }catch (Exception e){
-                e.printStackTrace();
-            }
-        }
+//        if(renderer==null){
+//            try{
+//                renderer = new PdfRenderer(pfd);
+//            }catch (Exception e){
+//                e.printStackTrace();
+//            }
+//        }
+        System.out.println("RARARARARARARARRAARRARARARRAARRAARRARARARARA");
         currentPage = renderer.openPage(num);
         totalPages = renderer.getPageCount();
         Bitmap bitmap = Bitmap.createBitmap(currentPage.getWidth(), currentPage.getHeight(), Bitmap.Config.ARGB_8888);
@@ -140,28 +142,28 @@ public class MainActivity extends AppCompatActivity{
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
+    protected void onSaveInstanceState(Bundle outState){
         super.onSaveInstanceState(outState);
-        outState.putInt("current_page_index", currentPageNum);
-
-        //Save PDF Uri if necessary
-        if (pfd != null) {
-            //outState.putParcelable("pdfUri", pdfUri);
-            outState.putParcelable("pdf", pfd);
+        outState.putInt("currentPageNum", currentPageNum);//current_page_index
+        if(uri!=null){//pfd
+            outState.putParcelable("uri", uri);//pdfUri
+            //outState.putParcelable("pfd", pfd);
         }
-
         // Save zoom scale and position if applicable
-        //if (myView != null) {
+        //if(myView != null){
             //outState.putFloat("zoomScale", myView.getScale());
             //outState.putParcelable("zoomCenter", myView.getCenter());
         //}
     }
     @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+    protected void onRestoreInstanceState(Bundle savedInstanceState){
         super.onRestoreInstanceState(savedInstanceState);
-        pfd = savedInstanceState.getParcelable("pfd");
-        currentPageNum = savedInstanceState.getInt("current_page_index", 0);
-        if(pfd!=null){
+        uri = savedInstanceState.getParcelable("uri");
+        //pfd = savedInstanceState.getParcelable("pfd");
+        currentPageNum = savedInstanceState.getInt("currentPageNum", 0);
+        System.out.println("LOOOOOOOOK -> " + currentPageNum);
+        if(uri!=null){//pfd
+            handleFileUri(uri);
             showPage(currentPageNum);
         }
     }
