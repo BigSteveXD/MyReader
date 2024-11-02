@@ -20,7 +20,7 @@ import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity{
     private ActivityResultLauncher<Intent> filePickerLauncher;
-    ZoomImageView myView;//ImageView
+    ImageView myView;//ImageView //ZoomImageView
     ParcelFileDescriptor pfd;
     PdfRenderer renderer;
     //Bitmap bitmap;
@@ -124,6 +124,13 @@ public class MainActivity extends AppCompatActivity{
         if(currentPage!=null){
             currentPage.close();
         }
+        if(renderer==null){
+            try{
+                renderer = new PdfRenderer(pfd);
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
         currentPage = renderer.openPage(num);
         totalPages = renderer.getPageCount();
         Bitmap bitmap = Bitmap.createBitmap(currentPage.getWidth(), currentPage.getHeight(), Bitmap.Config.ARGB_8888);
@@ -136,34 +143,44 @@ public class MainActivity extends AppCompatActivity{
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putInt("current_page_index", currentPageNum);
-    }
 
+        //Save PDF Uri if necessary
+        if (pfd != null) {
+            //outState.putParcelable("pdfUri", pdfUri);
+            outState.putParcelable("pdf", pfd);
+        }
+
+        // Save zoom scale and position if applicable
+        //if (myView != null) {
+            //outState.putFloat("zoomScale", myView.getScale());
+            //outState.putParcelable("zoomCenter", myView.getCenter());
+        //}
+    }
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
+        pfd = savedInstanceState.getParcelable("pfd");
         currentPageNum = savedInstanceState.getInt("current_page_index", 0);
-        showPage(currentPageNum);
+        if(pfd!=null){
+            showPage(currentPageNum);
+        }
     }
 
     @Override
     protected void onStop(){
         super.onStop();
         try{
-            closeMyReader();
+            if(currentPage!=null){
+                currentPage.close();
+            }
+            if(renderer!=null){
+                renderer.close();
+            }
+            if(pfd!=null){
+                pfd.close();
+            }
         }catch(IOException e){
             e.printStackTrace();
-        }
-    }
-
-    private void closeMyReader() throws IOException{
-        if(currentPage!=null){
-            currentPage.close();
-        }
-        if(renderer!=null){
-            renderer.close();
-        }
-        if(pfd!=null){
-            pfd.close();
         }
     }
 }
