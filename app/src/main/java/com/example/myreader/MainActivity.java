@@ -144,8 +144,8 @@ public class MainActivity extends AppCompatActivity{
     @Override
     protected void onSaveInstanceState(Bundle outState){
         super.onSaveInstanceState(outState);
-        outState.putInt("currentPageNum", currentPageNum);//current_page_index
-        if(uri!=null){//pfd
+        outState.putInt("currentPageNum", currentPageNum);
+        if(uri!=null){
             outState.putParcelable("uri", uri);//pdfUri
             //outState.putParcelable("pfd", pfd);
         }
@@ -161,7 +161,6 @@ public class MainActivity extends AppCompatActivity{
         uri = savedInstanceState.getParcelable("uri");
         //pfd = savedInstanceState.getParcelable("pfd");
         currentPageNum = savedInstanceState.getInt("currentPageNum", 0);
-        System.out.println("LOOOOOOOOK -> " + currentPageNum);
         if(uri!=null){//pfd
             handleFileUri(uri);
             showPage(currentPageNum);
