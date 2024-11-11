@@ -3,6 +3,7 @@ package com.example.myreader;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.PointF;
 import android.graphics.pdf.PdfRenderer;
 import android.net.Uri;
 import android.os.Bundle;
@@ -23,7 +24,7 @@ import java.io.IOException;
 import com.davemorrissey.labs.subscaleview.ImageSource;
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 
-public class MainActivity extends AppCompatActivity implements GestureDetector.OnGestureListener {
+public class MainActivity extends AppCompatActivity implements GestureDetector.OnGestureListener{
     private GestureDetector gestureDetector;
     private ActivityResultLauncher<Intent> filePickerLauncher;
     private SubsamplingScaleImageView myView;//ImageView //ZoomImageView
@@ -36,6 +37,9 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
     private Button btnOpenFile;
     private Button btnNext;
     private Button btnPrev;
+    private float scale = 1f;
+    private float threshold = 1f;
+    private PointF center = new PointF(0,0);//PointF
 
     @Override
     protected void onCreate(Bundle savedInstanceState){
@@ -57,6 +61,18 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
             gestureDetector.onTouchEvent(event);
             return myView.onTouchEvent(event);
         });
+        myView.setOnStateChangedListener(new SubsamplingScaleImageView.OnStateChangedListener(){
+            @Override
+            public void onScaleChanged(float newScale, int origin){
+                if(newScale>threshold){
+                    showPage(currentPageNum, newScale);
+                }
+            }
+            @Override
+            public void onCenterChanged(PointF newCenter, int origin){
+                //handle panning
+            }
+        });
 
         btnOpenFile = findViewById(R.id.btnOpenFile);
         btnOpenFile.setOnClickListener(new View.OnClickListener(){
@@ -73,7 +89,7 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
                 if(currentPageNum+1<totalPages){
                     currentPageNum++;
                     try{
-                        showPage(currentPageNum);
+                        showPage(currentPageNum,1);//scale
                     }catch(Exception e){
                         throw new RuntimeException(e);
                     }
@@ -88,7 +104,7 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
                 if(currentPageNum>0){
                     currentPageNum--;
                     try{
-                        showPage(currentPageNum);
+                        showPage(currentPageNum,1);//scale
                     }catch(Exception e){
                         throw new RuntimeException(e);
                     }
@@ -99,7 +115,7 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
         filePickerLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
-                    if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null){
+                    if(result.getResultCode() == Activity.RESULT_OK && result.getData() != null){
                         uri = result.getData().getData();
                         handleFileUri(uri);
                     }
@@ -107,13 +123,13 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
         );
     }
 
-    // Implement the GestureDetector.OnGestureListener methods
+    //GestureDetector.OnGestureListener methods
     @Override
-    public boolean onDown(MotionEvent e) {
+    public boolean onDown(MotionEvent e){
         return false;
     }
     @Override
-    public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+    public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY){
         final int SWIPE_THRESHOLD = 100;
         final int SWIPE_VELOCITY_THRESHOLD = 100;
 
@@ -126,13 +142,13 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
                     //Swipe Right //prev page
                     if(currentPageNum>0){
                         currentPageNum--;
-                        showPage(currentPageNum);
+                        showPage(currentPageNum,1f);//scale
                     }
                 }else{
                     //Swipe Left //next page
                     if(currentPageNum+1<totalPages){
                         currentPageNum++;
-                        showPage(currentPageNum);
+                        showPage(currentPageNum,1f);//scale
                     }
                 }
                 return true;
@@ -141,62 +157,54 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
         return false;
     }
     @Override
-    public void onShowPress(MotionEvent e) {}
-
+    public void onShowPress(MotionEvent e){
+    }
     @Override
-    public boolean onSingleTapUp(MotionEvent e) { return false; }
-
+    public boolean onSingleTapUp(MotionEvent e){
+        return false;
+    }
     @Override
-    public void onLongPress(MotionEvent e) {}
-
+    public void onLongPress(MotionEvent e){
+    }
     @Override
-    public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) { return false; }
+    public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY){
+        return false;
+    }
 
 
-
-    private void openFilePicker() {
+    private void openFilePicker(){
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("application/pdf");//"application/pdf" selects PDFs only //*/*
-
         filePickerLauncher.launch(Intent.createChooser(intent, "Select PDF"));
     }
 
     private void handleFileUri(Uri uri){
-        //DisplayMetrics displayMetrics = new DisplayMetrics();
-        //getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        //int height = displayMetrics.heightPixels;
-        //int width = displayMetrics.widthPixels;
-
         try{
-            pfd = getContentResolver().openFileDescriptor(uri, "r");//WORKS
+            pfd = getContentResolver().openFileDescriptor(uri, "r");
             //getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
             renderer = new PdfRenderer(pfd);
         }catch(Exception e){
             e.printStackTrace();
         }
-
-        showPage(currentPageNum);
+        showPage(currentPageNum, 1);//scale
         btnOpenFile.setVisibility(View.GONE);//View.VISIBLE
     }
 
-    private void showPage(int num){
+    private void showPage(int num, float scale){
         if(currentPage!=null){
             currentPage.close();
         }
-//        if(renderer==null){
-//            try{
-//                renderer = new PdfRenderer(pfd);
-//            }catch (Exception e){
-//                e.printStackTrace();
-//            }
-//        }
-        //System.out.println("RARARARARARARARRAARRARARARRAARRAARRARARARARA");
         currentPage = renderer.openPage(num);
         totalPages = renderer.getPageCount();
-        Bitmap bitmap = Bitmap.createBitmap(currentPage.getWidth(), currentPage.getHeight(), Bitmap.Config.ARGB_8888);
+        int pageWidth = currentPage.getWidth();//width in points
+        int pageHeight = currentPage.getHeight();//height in points
+        int density = getResources().getDisplayMetrics().densityDpi;//dots per inch //420
+        int bitmapWidth = density / 72 * pageWidth;//dpi / 72 * pageWidth //612w 792h medium //540w 666h
+        int bitmapHeight = density / 72 * pageHeight;
+        Bitmap bitmap = Bitmap.createBitmap(Math.round(bitmapWidth * scale), Math.round(bitmapHeight * scale), Bitmap.Config.ARGB_8888);//3240 3996
         currentPage.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
-        myView.setImage(ImageSource.bitmap(bitmap));//myView.setImageBitmap(bitmap);
+        myView.setImage(ImageSource.bitmap(bitmap));
         currentPageNum = num;
     }
 
@@ -205,23 +213,25 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
         super.onSaveInstanceState(outState);
         outState.putInt("currentPageNum", currentPageNum);
         if(uri!=null){
-            outState.putParcelable("uri", uri);//pdfUri
-            //outState.putParcelable("pfd", pfd);
+            outState.putParcelable("uri", uri);
         }
-        // Save zoom scale and position if applicable
-        //if(myView != null){
-            //outState.putFloat("zoomScale", myView.getScale());
-            //outState.putParcelable("zoomCenter", myView.getCenter());
-        //}
+        if(myView!=null){
+            outState.putFloat("scale", scale);//myView.getScale()
+            outState.putParcelable("center", center);//myView.getCenter()
+        }
     }
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState){
         super.onRestoreInstanceState(savedInstanceState);
-        uri = savedInstanceState.getParcelable("uri");
-        //pfd = savedInstanceState.getParcelable("pfd");
         currentPageNum = savedInstanceState.getInt("currentPageNum", 0);
+        uri = savedInstanceState.getParcelable("uri");
+        scale = savedInstanceState.getFloat("scale", 1.0f);
+        center = savedInstanceState.getParcelable("center");
+        if(myView!=null){
+            myView.setScaleAndCenter(scale, center);
+        }
         if(uri!=null){
-            handleFileUri(uri);//showPage(currentPageNum);
+            handleFileUri(uri);
         }
     }
 
@@ -238,7 +248,7 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
             if(pfd!=null){
                 pfd.close();
             }
-        }catch(IOException e){//IOException e
+        }catch(IOException e){
             e.printStackTrace();
         }
     }
