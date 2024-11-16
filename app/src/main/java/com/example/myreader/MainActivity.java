@@ -232,6 +232,7 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
     protected void onSaveInstanceState(Bundle outState){
         super.onSaveInstanceState(outState);
         outState.putInt("currentPageNum", currentPageNum);
+        outState.putInt("bookmark", bookmark);
         if(uri!=null){
             outState.putParcelable("uri", uri);
         }
@@ -244,6 +245,7 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
     protected void onRestoreInstanceState(Bundle savedInstanceState){
         super.onRestoreInstanceState(savedInstanceState);
         currentPageNum = savedInstanceState.getInt("currentPageNum", 0);
+        bookmark = savedInstanceState.getInt("bookmark", -1);
         uri = savedInstanceState.getParcelable("uri");
         scale = savedInstanceState.getFloat("scale", 1.0f);
         center = savedInstanceState.getParcelable("center");
