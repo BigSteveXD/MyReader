@@ -118,7 +118,7 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
             }
         });
 
-        btnBookmark = findViewById(R.id.bookmark);
+        btnBookmark = findViewById(R.id.Bookmark);
         btnBookmark.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
