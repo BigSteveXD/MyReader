@@ -37,6 +37,15 @@
         android:layout_gravity="bottom">
     </Button>
 
+    <Button
+        android:id="@+id/Bookmark"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="bookmark"
+        android:layout_centerHorizontal="true"
+        android:layout_gravity="bottom">
+    </Button>
+
 <!--    <com.example.myreader.ZoomImageView-->
 <!--        android:id="@+id/pdfView"-->
 <!--        android:layout_width="match_parent"-->

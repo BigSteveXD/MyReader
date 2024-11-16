@@ -20,6 +20,8 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
 
 import com.davemorrissey.labs.subscaleview.ImageSource;
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
@@ -37,9 +39,11 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
     private Button btnOpenFile;
     private Button btnNext;
     private Button btnPrev;
+    private Button btnBookmark;
     private float scale = 1f;
     private float threshold = 1f;
     private PointF center = new PointF(0,0);//PointF
+    private int bookmark = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState){
@@ -64,8 +68,10 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
         myView.setOnStateChangedListener(new SubsamplingScaleImageView.OnStateChangedListener(){
             @Override
             public void onScaleChanged(float newScale, int origin){
-                if(newScale>threshold){
+                if(newScale>threshold){//newScale>threshold //&& newScale < myView.getMinScale()
                     showPage(currentPageNum, newScale);
+                }else{
+                    showPage(currentPageNum, scale);
                 }
             }
             @Override
@@ -112,6 +118,20 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
             }
         });
 
+        btnBookmark = findViewById(R.id.bookmark);
+        btnBookmark.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view){
+                if(bookmark == currentPageNum){
+                    bookmark = -1;
+                }else if(bookmark == -1){
+                    bookmark = currentPageNum;
+                }else{
+                    showPage(bookmark, scale);
+                }
+            }
+        });
+
         filePickerLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
@@ -130,13 +150,13 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
     }
     @Override
     public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY){
-        final int SWIPE_THRESHOLD = 100;
-        final int SWIPE_VELOCITY_THRESHOLD = 100;
+        final int SWIPE_THRESHOLD = 300;//100
+        final int SWIPE_VELOCITY_THRESHOLD = 200;//100
 
         float diffX = e2.getX() - e1.getX();
         float diffY = e2.getY() - e1.getY();
 
-        if(Math.abs(diffX) > Math.abs(diffY)){
+        if(Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffY) < 75){//Math.abs(diffX) > Math.abs(diffY) //&& Math.abs(diffX) > 75
             if(Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD){
                 if(diffX > 0 && uri!=null){
                     //Swipe Right //prev page
