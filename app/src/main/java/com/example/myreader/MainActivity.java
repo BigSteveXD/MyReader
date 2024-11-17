@@ -41,9 +41,11 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
     private Button btnPrev;
     private Button btnBookmark;
     private float scale = 1f;
-    private float threshold = 1f;
-    private PointF center = new PointF(0,0);//PointF
+    private float threshold = 3f;//1 //4 works
+    //private PointF center = new PointF(0,0);//PointF
     private int bookmark = -1;
+    private float screenWidth = 0;
+    private float screenHeight = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState){
@@ -58,6 +60,11 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
         });
         */
 
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        screenWidth = displayMetrics.widthPixels;
+        screenHeight = displayMetrics.heightPixels;
+
         gestureDetector = new GestureDetector(this, this);
 
         myView = findViewById(R.id.pdfView);
@@ -70,13 +77,13 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
             public void onScaleChanged(float newScale, int origin){
                 if(newScale>threshold){//newScale>threshold //&& newScale < myView.getMinScale()
                     showPage(currentPageNum, newScale);
-                }else{
-                    showPage(currentPageNum, scale);
                 }
             }
             @Override
             public void onCenterChanged(PointF newCenter, int origin){
                 //handle panning
+                //center = new PointF(origin + newCenter, origin + newCenter);
+                //center = newCenter;
             }
         });
 
@@ -95,7 +102,7 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
                 if(currentPageNum+1<totalPages){
                     currentPageNum++;
                     try{
-                        showPage(currentPageNum,1);//scale
+                        showPage(currentPageNum,1f);//scale
                     }catch(Exception e){
                         throw new RuntimeException(e);
                     }
@@ -110,7 +117,7 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
                 if(currentPageNum>0){
                     currentPageNum--;
                     try{
-                        showPage(currentPageNum,1);//scale
+                        showPage(currentPageNum,1f);//scale
                     }catch(Exception e){
                         throw new RuntimeException(e);
                     }
@@ -118,7 +125,7 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
             }
         });
 
-        btnBookmark = findViewById(R.id.Bookmark);
+        btnBookmark = findViewById(R.id.bookmark);
         btnBookmark.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
@@ -156,22 +163,34 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
         float diffX = e2.getX() - e1.getX();
         float diffY = e2.getY() - e1.getY();
 
-        if(Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffY) < 75){//Math.abs(diffX) > Math.abs(diffY) //&& Math.abs(diffX) > 75
-            if(Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD){
-                if(diffX > 0 && uri!=null){
-                    //Swipe Right //prev page
-                    if(currentPageNum>0){
-                        currentPageNum--;
-                        showPage(currentPageNum,1f);//scale
+        float screenPercent = (float)((30.0 / 100.0) * screenWidth);//% = (value / screenWidth) * 100
+        //float leftSideBegin = 0;
+        float leftSideEnd = screenPercent;//0 + screenPercent
+        float rightSideBegin = screenWidth - screenPercent;
+        //float rightSideEnd = screenWidth
+
+        //System.out.println("ZZZZZZZZZZ WIDTH: " + screenWidth + " HEIGHT: " + screenHeight);//1080 //2097
+        //System.out.println("ZZZZZZZZZZ leftSideEnd: " + leftSideEnd + " rightSideBegin: " + rightSideBegin);
+        //System.out.println("ZZZZZZZZZZ E1: " + e1.getX() + " E2: " + e2.getX());
+
+        if(e1.getX()<leftSideEnd || e1.getX() > rightSideBegin){//e1.getX()<leftSideEnd || e1.getX() > rightSideBegin
+            if(Math.abs(diffX) > Math.abs(diffY)){//Math.abs(diffX) > Math.abs(diffY) //&& Math.abs(diffX) > 75 //&& Math.abs(diffY) < 75
+                if(Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD){
+                    if(diffX > 0 && uri!=null){
+                        //Swipe Right //prev page
+                        if(currentPageNum>0){
+                            currentPageNum--;
+                            showPage(currentPageNum, scale);//scale
+                        }
+                    }else{
+                        //Swipe Left //next page
+                        if(currentPageNum+1<totalPages){
+                            currentPageNum++;
+                            showPage(currentPageNum, scale);//scale
+                        }
                     }
-                }else{
-                    //Swipe Left //next page
-                    if(currentPageNum+1<totalPages){
-                        currentPageNum++;
-                        showPage(currentPageNum,1f);//scale
-                    }
+                    return true;
                 }
-                return true;
             }
         }
         return false;
@@ -207,7 +226,7 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
         }catch(Exception e){
             e.printStackTrace();
         }
-        showPage(currentPageNum, 1);//scale
+        showPage(currentPageNum, scale);//scale
         btnOpenFile.setVisibility(View.GONE);//View.VISIBLE
     }
 
@@ -238,7 +257,7 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
         }
         if(myView!=null){
             outState.putFloat("scale", scale);//myView.getScale()
-            outState.putParcelable("center", center);//myView.getCenter()
+            //outState.putParcelable("center", center);//myView.getCenter()
         }
     }
     @Override
@@ -248,9 +267,9 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
         bookmark = savedInstanceState.getInt("bookmark", -1);
         uri = savedInstanceState.getParcelable("uri");
         scale = savedInstanceState.getFloat("scale", 1.0f);
-        center = savedInstanceState.getParcelable("center");
+        //center = savedInstanceState.getParcelable("center");
         if(myView!=null){
-            myView.setScaleAndCenter(scale, center);
+            //myView.setScaleAndCenter(scale, center);
         }
         if(uri!=null){
             handleFileUri(uri);
